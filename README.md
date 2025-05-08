@@ -124,5 +124,27 @@ dotenv
 🙌 Acknowledgments
 Thanks to all open-source tools and libraries that made this project possible!
 
+We welcome contributions to make this project better! If you’d like to contribute, please follow these steps:
+
+Fork the repository.
+
+Create a branch for your feature or bug fix:
+
+bash
+Copy
+Edit
+git checkout -b feature-name
+Commit your changes with clear messages.
+
+Push to your forked repository.
+
+Open a Pull Request describing what you changed and why.
+
+Please make sure your code follows our existing style and includes relevant comments and documentation.
+
+If you're new to open source, feel free to open an issue or ask questions — we're happy to help!
+
+
+
 📄 License
 This project is open source and available under the MIT License.
