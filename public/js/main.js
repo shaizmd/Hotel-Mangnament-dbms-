@@ -69,6 +69,38 @@ function getAllBookingData() {
   };
 }
 
+// ===== DATE PICKER FUNCTIONALITY =====
+function initDatePicker() {
+  const dateRangePicker = document.getElementById('date-range');
+  if (!dateRangePicker) return;
+  
+  // Create the flatpickr instance with proper configuration
+  const picker = flatpickr("#date-range", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    minDate: "today",
+    onChange: function(selectedDates, dateStr) {
+      if (selectedDates.length === 2) {
+        console.log("Date selection changed:", dateStr);
+        saveSearchData();
+        
+        // Update Your Stay display if on room selection page
+        if (isRoomSelectionPage()) {
+          const searchData = getBookingData('searchData');
+          updateYourStayDisplay(searchData);
+        }
+      }
+    }
+  });
+  
+  // If we have saved dates, initialize the picker with them
+  const searchData = getBookingData('searchData');
+  if (searchData && searchData.dates && searchData.dates.checkIn && searchData.dates.checkOut) {
+    console.log("Setting saved dates:", searchData.dates);
+    picker.setDate([searchData.dates.checkIn, searchData.dates.checkOut]);
+  }
+}
+
 // ===== NAVBAR SEARCH FUNCTIONALITY =====
 function initNavbarSearch() {
   const searchBar = document.querySelector('.search-bar');
@@ -95,7 +127,7 @@ function initNavbarSearch() {
       
       // If on homepage, navigate to rooms page
       if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-        window.location.href = '/rooms';
+        window.location.href = '/';
       }
     });
   }
@@ -106,15 +138,20 @@ function saveSearchData() {
   const searchBar = document.querySelector('.search-bar');
   if (!searchBar) return;
   
+  const dateRangeValue = document.getElementById('date-range')?.value || '';
+  const dates = extractDatesFromRange(dateRangeValue);
+  const nights = calculateNights(dates.checkIn, dates.checkOut);
+  
+  console.log("Saving search data with dates:", dates, "nights:", nights);
+  
   const searchData = {
     hotel: searchBar.querySelector('select[aria-label="Hotel Selection"]')?.value || 'Taj Cidade de Goa Heritage',
-    dateRange: document.getElementById('date-range')?.value || '',
-    dates: extractDatesFromRange(document.getElementById('date-range')?.value),
+    dateRange: dateRangeValue,
+    dates: dates,
     guests: searchBar.querySelector('select[aria-label="Number of Guests"]')?.value || '2 Guests',
     rooms: searchBar.querySelector('select[aria-label="Number of Rooms"]')?.value || '1 Room',
     specialCode: searchBar.querySelector('input[placeholder="Special Code"]')?.value || '',
-    // Calculate nights from date range
-    nights: calculateNights(document.getElementById('date-range')?.value)
+    nights: nights
   };
   
   saveBookingData('searchData', searchData);
@@ -122,27 +159,36 @@ function saveSearchData() {
 
 // Helper function to extract check-in and check-out dates from range
 function extractDatesFromRange(dateRange) {
-  if (!dateRange) return { checkIn: '2025-05-10', checkOut: '2025-05-13' };
+  if (!dateRange) {
+    console.log("No date range provided");
+    return { checkIn: null, checkOut: null };
+  }
   
   const dates = dateRange.split(' to ');
   return {
-    checkIn: dates[0] || '2025-05-10',
-    checkOut: dates[1] || '2025-05-13'
+    checkIn: dates[0] || null,
+    checkOut: dates[1] || null
   };
 }
 
-// Calculate number of nights from date range
-function calculateNights(dateRange) {
-  if (!dateRange) return 3;
+// Calculate number of nights between two dates
+function calculateNights(checkInDate, checkOutDate) {
+  if (!checkInDate || !checkOutDate) {
+    console.log("Missing dates for night calculation");
+    return 0;
+  }
   
-  const dates = extractDatesFromRange(dateRange);
-  const checkIn = new Date(dates.checkIn);
-  const checkOut = new Date(dates.checkOut);
+  const checkIn = new Date(checkInDate);
+  const checkOut = new Date(checkOutDate);
   
-  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) return 3;
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    console.log("Invalid date format for night calculation");
+    return 0;
+  }
   
   const diffTime = Math.abs(checkOut - checkIn);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  console.log("Calculated nights:", diffDays);
   return diffDays;
 }
 
@@ -168,16 +214,15 @@ function loadSavedSearchData() {
   const searchData = getBookingData('searchData');
   if (!searchData) return;
   
+  console.log("Loading saved search data:", searchData);
+  
   // Set values if elements exist
   if (searchData.hotel) {
     const hotelSelect = searchBar.querySelector('select[aria-label="Hotel Selection"]');
     if (hotelSelect) hotelSelect.value = searchData.hotel;
   }
   
-  if (searchData.dateRange) {
-    const dateRangeInput = document.getElementById('date-range');
-    if (dateRangeInput) dateRangeInput.value = searchData.dateRange;
-  }
+  // Date range is handled in initDatePicker
   
   if (searchData.guests) {
     const guestsSelect = searchBar.querySelector('select[aria-label="Number of Guests"]');
@@ -192,22 +237,6 @@ function loadSavedSearchData() {
   if (searchData.specialCode) {
     const specialCodeInput = searchBar.querySelector('input[placeholder="Special Code"]');
     if (specialCodeInput) specialCodeInput.value = searchData.specialCode;
-  }
-}
-
-// ===== DATE PICKER FUNCTIONALITY =====
-function initDatePicker() {
-  const dateRangePicker = document.getElementById('date-range');
-  if (dateRangePicker) {
-    flatpickr("#date-range", {
-      mode: "range",
-      dateFormat: "Y-m-d",
-      defaultDate: ["2025-05-10", "2025-05-13"],
-      onChange: function(selectedDates, dateStr) {
-        // Save the selected date range when it changes
-        saveSearchData();
-      }
-    });
   }
 }
 
@@ -229,7 +258,13 @@ function initRoomSelection() {
       
       // Get search data for calculating total
       const searchData = getBookingData('searchData');
-      const nights = searchData?.nights || 3;
+      const nights = searchData?.nights || 0;
+      
+      // If no nights are selected, alert user
+      if (nights === 0) {
+        alert("Please select check-in and check-out dates before selecting a room.");
+        return;
+      }
       
       // Calculate totals based on number of nights
       const price = pricePerNight * nights;
@@ -239,20 +274,22 @@ function initRoomSelection() {
       // Create room selection data with complete information
       const roomData = {
         roomName,
-        roomNumber, // Add this for backend integration
+        roomNumber,
         pricePerNight,
         price,
         tax,
         total,
         nights,
-        // Include formatted dates for display
-        checkIn: searchData?.dates?.checkIn || '2025-05-10',
-        checkOut: searchData?.dates?.checkOut || '2025-05-13',
+        // Include dates from search data
+        checkIn: searchData?.dates?.checkIn || null,
+        checkOut: searchData?.dates?.checkOut || null,
         displayCheckIn: formatDisplayDate(searchData?.dates?.checkIn),
         displayCheckOut: formatDisplayDate(searchData?.dates?.checkOut),
         guests: searchData?.guests || '2 Guests',
         rooms: searchData?.rooms || '1 Room'
       };
+      
+      console.log("Saving room selection data:", roomData);
       
       // Save to localStorage
       saveBookingData('roomSelection', roomData);
@@ -273,6 +310,8 @@ function populateRoomSelectionData() {
   // Load saved search data to display in "Your Stay"
   const allData = getAllBookingData();
   
+  console.log("Populating room selection with data:", allData);
+  
   // Update Your Stay sidebar with existing data
   if (allData.search) {
     updateYourStayDisplay(allData.search);
@@ -289,6 +328,8 @@ function updateYourStayDisplay(searchData) {
   const yourStayElement = document.querySelector('.your-stay');
   if (!yourStayElement) return;
   
+  console.log("Updating Your Stay display with:", searchData);
+  
   // Extract and format data for display
   const roomsText = searchData.rooms || '1 Room';
   const guestsText = searchData.guests || '2 Guests';
@@ -301,15 +342,28 @@ function updateYourStayDisplay(searchData) {
   const roomsStr = roomsCount === 1 ? 'Room 1' : `${roomsCount} Rooms`;
   const guestsStr = guestsCount === 1 ? '1 Adult' : `${guestsCount} Adults`;
   
-  // Find or create info paragraph
-  let guestsInfo = yourStayElement.querySelector('p:first-of-type');
-  if (!guestsInfo) {
-    guestsInfo = document.createElement('p');
-    yourStayElement.appendChild(guestsInfo);
+  // Build HTML content for Your Stay section
+  let stayContent = `
+    <h4><div class="stay">Your Stay</div></h4>
+    <p>${roomsStr}: ${guestsStr}<br><span class="selection">Not selected</span></p>
+  `;
+  
+  // Add date information if available
+  if (searchData.dates && searchData.dates.checkIn && searchData.dates.checkOut) {
+    const displayCheckIn = formatDisplayDate(searchData.dates.checkIn);
+    const displayCheckOut = formatDisplayDate(searchData.dates.checkOut);
+    const nights = searchData.nights || 0;
+    
+    stayContent += `
+      <p><strong>Dates:</strong> ${displayCheckIn} - ${displayCheckOut}</p>
+      <p><strong>Nights:</strong> ${nights}</p>
+    `;
+  } else {
+    stayContent += `<p><strong>Dates:</strong> Please select check-in and check-out dates</p>`;
   }
   
   // Update the content
-  guestsInfo.innerHTML = `${roomsStr}: ${guestsStr}<br><span class="selection">Not selected</span>`;
+  yourStayElement.innerHTML = stayContent;
 }
 
 // Function to update the UI with room selection
@@ -319,23 +373,37 @@ function updateRoomSelection(roomData) {
     return;
   }
   
-  // Get current guest information (if any)
-  const currentGuestInfo = asideElement.querySelector('p:first-of-type')?.innerHTML.split('<br>')[0] || 
-                         `${roomData.rooms || '1 Room'}: ${roomData.guests || '2 Adults'}`;
+  console.log("Updating room selection display with:", roomData);
   
   // Keep the original heading
-  const heading = asideElement.querySelector('h4')?.outerHTML || 
-                 '<h4><div class="stay">Your Stay</div></h4>';
+  const heading = '<h4><div class="stay">Your Stay</div></h4>';
   
   // Format dates for display
-  const checkInDate = roomData.displayCheckIn || formatDisplayDate(roomData.checkIn) || '10 May 2025';
-  const checkOutDate = roomData.displayCheckOut || formatDisplayDate(roomData.checkOut) || '13 May 2025';
+  let dateDisplay = '<p><strong>Dates:</strong> Please select dates</p>';
+  
+  if (roomData.checkIn && roomData.checkOut) {
+    const checkInDate = roomData.displayCheckIn || formatDisplayDate(roomData.checkIn);
+    const checkOutDate = roomData.displayCheckOut || formatDisplayDate(roomData.checkOut);
+    dateDisplay = `<p><strong>Dates:</strong> ${checkInDate} - ${checkOutDate}</p>`;
+  }
+  
+  // Format room information
+  const roomsText = roomData.rooms || '1 Room';
+  const guestsText = roomData.guests || '2 Guests';
+  
+  // Extract numbers from text
+  const roomsCount = parseInt(roomsText) || 1;
+  const guestsCount = parseInt(guestsText) || 2;
+  
+  // Generate correct text (singular or plural)
+  const roomsStr = roomsCount === 1 ? 'Room 1' : `${roomsCount} Rooms`;
+  const guestsStr = guestsCount === 1 ? '1 Adult' : `${guestsCount} Adults`;
   
   // Replace the entire content
   asideElement.innerHTML = `
     ${heading}
-    <p>${currentGuestInfo}<br><span class="selection">${roomData.roomName}</span></p>
-    <p><strong>Dates:</strong> ${checkInDate} - ${checkOutDate}</p>
+    <p>${roomsStr}: ${guestsStr}<br><span class="selection">${roomData.roomName}</span></p>
+    ${dateDisplay}
     <p><strong>Price:</strong> ₹ ${roomData.pricePerNight.toLocaleString()} per night (${roomData.nights} nights)</p>
     <p><strong>Room Total:</strong> ₹ ${roomData.price.toLocaleString()}</p>
     <p><strong>Taxes and Fees:</strong> ₹ ${roomData.tax.toLocaleString()}</p>
@@ -406,7 +474,7 @@ function initPersonalDetailsForm() {
   const backBtn = document.querySelector('.btn-back');
   if (backBtn) {
     backBtn.addEventListener('click', () => {
-      window.location.href = '/rooms';
+      window.location.href = '/';
     });
   }
 }
