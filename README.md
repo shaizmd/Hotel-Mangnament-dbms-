@@ -18,41 +18,7 @@ This is a hotel booking web application built using **Node.js**, **Express.js**,
 
 ## 📁 Project Structure
 
-hotel-booking-app/
-│
-├── src/
-│ ├── models/ # Database model logic
-│ │ ├── guest.js
-│ │ └── booking.js
-│ │
-│ ├── db/
-│ │ └── conn.js # PostgreSQL DB connection
-│ │
-│ ├── .env # Environment variables
-│ ├── package.json
-│ ├── package-lock.json
-│ └── app.js # Main Express app
-│
-├── templates/
-│ ├── partials/ # Handlebars partials
-│ │ ├── navbar.hbs
-│ │ └── footer.hbs
-│ │
-│ └── views/ # Handlebars views/pages
-│ ├── index.hbs
-│ ├── personal.hbs
-│ ├── payment.hbs
-│ └── confirmation.hbs
-│
-├── public/ # Static frontend files
-│ ├── js/
-│ │ └── main.js
-│ └── css/
-│ └── style.css
-
-pgsql
-Copy
-Edit
+<pre> <code> ```plaintext hotel-booking-app/ │ ├── src/ │ ├── models/ # Database model logic │ │ ├── guest.js │ │ └── booking.js │ │ │ ├── db/ │ │ └── conn.js # PostgreSQL DB connection │ │ │ ├── .env # Environment variables │ ├── package.json │ ├── package-lock.json │ └── app.js # Main Express app │ ├── templates/ │ ├── partials/ # Handlebars partials │ │ ├── navbar.hbs │ │ └── footer.hbs │ │ │ └── views/ # Handlebars views/pages │ ├── index.hbs │ ├── personal.hbs │ ├── payment.hbs │ └── confirmation.hbs │ ├── public/ # Static frontend files │ ├── js/ │ │ └── main.js │ └── css/ │ └── style.css ``` </code> </pre>
 
 ---
 
