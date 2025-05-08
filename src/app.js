@@ -170,9 +170,7 @@ app.post('/api/bookings', async (req, res) => {
       bookingReference,
       paymentAmount,
       paymentDate,
-      paymentMethod,
-      guestEmail,
-      roomNumber
+      paymentMethod
     } = req.body;
 
     // Validate required fields
@@ -181,136 +179,67 @@ app.post('/api/bookings', async (req, res) => {
       return res.status(400).json({ message: 'Missing booking reference' });
     }
     
-    if (!guestEmail) {
-      console.log('Missing guest email');
-      return res.status(400).json({ message: 'Missing guest email' });
-    }
-    
-    if (!roomNumber) {
-      console.log('Missing room number');
-      return res.status(400).json({ message: 'Missing room number' });
-    }
-
-    console.log('Checking for guest with email:', guestEmail);
-    
+    // Directly insert into the database instead of using a separate function
+    // This helps us identify any schema issues more directly
     try {
-      // Check if the guest exists - note that your schema likely has 'id' not 'guest_id'
-      const guestResult = await pool.query('SELECT id FROM guests WHERE email = $1', [guestEmail]);
-      console.log('Guest query result:', guestResult.rows);
+      const insertQuery = `
+        INSERT INTO bookings (booking_reference, payment_amount, payment_date, payment_method)
+        VALUES ($1, $2, $3, $4)
+        RETURNING *
+      `;
       
-      let guestId;
+      console.log('Executing query:', insertQuery);
+      console.log('With parameters:', [
+        bookingReference,
+        paymentAmount || 0,
+        paymentDate || new Date().toISOString().split('T')[0],
+        paymentMethod || 'Not specified'
+      ]);
       
-      if (guestResult.rows.length === 0) {
-        // Guest doesn't exist, let's create one
-        console.log(`Guest with email ${guestEmail} not found. Creating a new guest entry.`);
-        
-        // Extract name from email if possible
-        const emailParts = guestEmail.split('@');
-        const defaultName = emailParts[0] || 'Guest';
-        
-        const newGuestQuery = `
-          INSERT INTO guests (fname, lname, email, phone_no)
-          VALUES ($1, $2, $3, $4)
-          RETURNING id
-        `;
-        
-        console.log('Creating new guest with query:', newGuestQuery);
-        console.log('Parameters:', [defaultName, 'Guest', guestEmail, 'Not provided']);
-        
-        const guestInsertResult = await pool.query(newGuestQuery, [
-          defaultName,   // First name (placeholder)
-          'Guest',       // Last name (placeholder)
-          guestEmail,
-          'Not provided' // Phone (placeholder)
-        ]);
-        
-        console.log('New guest created:', guestInsertResult.rows[0]);
-        guestId = guestInsertResult.rows[0].id; // Use 'id' not 'guest_id'
-      } else {
-        guestId = guestResult.rows[0].id; // Use 'id' not 'guest_id'
-        console.log('Found existing guest ID:', guestId);
+      const result = await pool.query(insertQuery, [
+        bookingReference,
+        paymentAmount || 0,
+        paymentDate || new Date().toISOString().split('T')[0],
+        paymentMethod || 'Not specified'
+      ]);
+      
+      const newBooking = result.rows[0];
+      console.log('Booking created successfully:', newBooking);
+      
+      res.status(200).json({ 
+        message: 'Booking saved successfully',
+        booking: newBooking
+      });
+    } catch (dbError) {
+      console.error('DATABASE ERROR:', dbError);
+      
+      // Provide more specific error based on common database issues
+      let errorMessage = 'Failed to save booking to database';
+      
+      if (dbError.code === '42P01') {
+        errorMessage = 'Table does not exist. Please check your database schema.';
+      } else if (dbError.code === '42703') {
+        errorMessage = 'Column not found. Your database schema may be out of date.';
+      } else if (dbError.code === '23502') {
+        errorMessage = 'Not-null constraint violation. A required column is missing.';
+      } else if (dbError.code === '23503') {
+        errorMessage = 'Foreign key constraint violation. Referenced row may not exist.';
       }
-
-      console.log('Checking if room exists:', roomNumber);
       
-      try {
-        // Make sure roomNumber is an integer if that's what your schema requires
-        const roomNumberInt = parseInt(roomNumber, 10);
-        
-        // Check if the rooms table has the room
-        const roomCheckResult = await pool.query('SELECT * FROM rooms WHERE room_number = $1', [roomNumberInt]);
-        console.log('Room check result:', roomCheckResult.rows);
-        
-        if (roomCheckResult.rows.length === 0) {
-          // Room doesn't exist, create it
-          console.log(`Room ${roomNumberInt} not found. Creating a new room entry.`);
-          
-          const createRoomQuery = `
-            INSERT INTO rooms (room_number, room_type, price, status)
-            VALUES ($1, $2, $3, $4)
-          `;
-          
-          console.log('Creating room with query:', createRoomQuery);
-          console.log('Parameters:', [roomNumberInt, 'Standard', 0, 'available']);
-          
-          await pool.query(createRoomQuery, [roomNumberInt, 'Standard', 0, 'available']);
-          console.log('Room created successfully');
-        }
-
-        // Use the booking service function with the correct schema
-        const bookingData = {
-          bookingReference,
-          guestId,
-          roomNumber: roomNumberInt, // Ensure it's an integer
-          paymentAmount: paymentAmount || 0,
-          paymentDate: paymentDate || new Date().toISOString().split('T')[0],
-          paymentMethod: paymentMethod || 'Not specified'
-        };
-        
-        console.log('Creating booking with data:', JSON.stringify(bookingData, null, 2));
-        
-        try {
-          const newBooking = await createBooking(bookingData);
-          console.log('Booking created successfully:', newBooking);
-          
-          res.status(200).json({ 
-            message: 'Booking saved successfully',
-            booking: newBooking
-          });
-        } catch (bookingError) {
-          console.error('ERROR CREATING BOOKING:', bookingError);
-          res.status(500).json({ 
-            message: 'Failed to save booking', 
-            error: bookingError.message,
-            details: bookingError.stack
-          });
-        }
-      } catch (roomError) {
-        console.error('ERROR CHECKING/CREATING ROOM:', roomError);
-        res.status(500).json({ 
-          message: 'Failed to check/create room', 
-          error: roomError.message,
-          details: roomError.stack
-        });
-      }
-    } catch (guestError) {
-      console.error('ERROR CHECKING/CREATING GUEST:', guestError);
       res.status(500).json({ 
-        message: 'Failed to check/create guest', 
-        error: guestError.message,
-        details: guestError.stack
+        message: errorMessage,
+        error: dbError.message,
+        code: dbError.code
       });
     }
   } catch (error) {
     console.error('GENERAL ERROR IN BOOKING ROUTE:', error);
     res.status(500).json({ 
       message: 'Failed to process booking request', 
-      error: error.message,
-      details: error.stack
+      error: error.message
     });
   }
 });
-
 // Enhanced error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled application error:', err);

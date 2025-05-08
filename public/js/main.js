@@ -535,25 +535,91 @@ function updateStepper() {
   }
 }
 
-// Update confirmation display and send data to backend
+// // Update confirmation display and send data to backend
+// function updateConfirmationDisplay(confirmationData) {
+//   const paymentMethodEl = document.getElementById('payment-method');
+//   const paymentDateEl = document.getElementById('payment-date');
+//   const bookingRefEl = document.getElementById('booking-reference');
+//   const paymentAmountEl = document.getElementById('payment-amount');
+
+//   if (paymentMethodEl) {
+//     paymentMethodEl.textContent = confirmationData.paymentMethod;
+//   }
+
+//   if (paymentDateEl) {
+//     paymentDateEl.textContent = confirmationData.paymentDate;
+//   }
+
+//   if (bookingRefEl) {
+//     bookingRefEl.textContent = confirmationData.confirmationNumber;
+//   }
+
+//   let finalAmount = 0;
+//   const roomData = getBookingData('roomSelection');
+//   if (paymentAmountEl) {
+//     if (roomData && roomData.total) {
+//       finalAmount = roomData.total;
+//       paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
+//     } else if (confirmationData.paymentAmount) {
+//       finalAmount = confirmationData.paymentAmount;
+//       paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
+//     }
+//   }
+
+//   // Send booking data to backend
+//   const guestData = getBookingData('personalDetails');
+//   if (guestData && roomData) {
+//     // Ensure roomNumber exists, generate if not available
+//     const roomNumber = roomData.roomNumber || `R${Math.floor(Math.random() * 900) + 100}`;
+    
+//     fetch('/api/bookings', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json'
+//       },
+//       body: JSON.stringify({
+//         bookingReference: confirmationData.confirmationNumber,
+//         guestEmail: guestData.email,
+//         roomNumber: roomNumber,
+//         paymentAmount: finalAmount,
+//         paymentDate: confirmationData.paymentDate,
+//         paymentMethod: confirmationData.paymentMethod
+//       })
+//     })
+//     .then(res => {
+//       if (!res.ok) throw new Error('Failed to save booking.');
+//       return res.json();
+//     })
+//     .then(data => {
+//       console.log('Booking saved:', data);
+//     })
+//     .catch(err => {
+//       console.error('Error saving booking:', err);
+//       // Don't alert to the user, as this is a non-critical operation
+//       // The booking is still valid even if backend storage fails
+//     });
+//   }
+// }
+
+
 function updateConfirmationDisplay(confirmationData) {
   const paymentMethodEl = document.getElementById('payment-method');
   const paymentDateEl = document.getElementById('payment-date');
   const bookingRefEl = document.getElementById('booking-reference');
   const paymentAmountEl = document.getElementById('payment-amount');
-
+  
   if (paymentMethodEl) {
     paymentMethodEl.textContent = confirmationData.paymentMethod;
   }
-
+  
   if (paymentDateEl) {
     paymentDateEl.textContent = confirmationData.paymentDate;
   }
-
+  
   if (bookingRefEl) {
     bookingRefEl.textContent = confirmationData.confirmationNumber;
   }
-
+  
   let finalAmount = 0;
   const roomData = getBookingData('roomSelection');
   if (paymentAmountEl) {
@@ -565,41 +631,48 @@ function updateConfirmationDisplay(confirmationData) {
       paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
     }
   }
-
+  
   // Send booking data to backend
-  const guestData = getBookingData('personalDetails');
-  if (guestData && roomData) {
-    // Ensure roomNumber exists, generate if not available
-    const roomNumber = roomData.roomNumber || `R${Math.floor(Math.random() * 900) + 100}`;
+  fetch('/api/bookings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      bookingReference: confirmationData.confirmationNumber,
+      paymentAmount: finalAmount,
+      paymentDate: confirmationData.paymentDate,
+      paymentMethod: confirmationData.paymentMethod
+    })
+  })
+  .then(res => {
+    console.log('Response status:', res.status);
     
-    fetch('/api/bookings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        bookingReference: confirmationData.confirmationNumber,
-        guestEmail: guestData.email,
-        roomNumber: roomNumber,
-        paymentAmount: finalAmount,
-        paymentDate: confirmationData.paymentDate,
-        paymentMethod: confirmationData.paymentMethod
-      })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Failed to save booking.');
-      return res.json();
-    })
-    .then(data => {
-      console.log('Booking saved:', data);
-    })
-    .catch(err => {
-      console.error('Error saving booking:', err);
-      // Don't alert to the user, as this is a non-critical operation
-      // The booking is still valid even if backend storage fails
-    });
-  }
+    // Get more information about error responses
+    if (!res.ok) {
+      // Extract the error message from the response
+      return res.json().then(errorData => {
+        console.error('Server error details:', errorData);
+        throw new Error(`Failed to save booking. Server says: ${errorData.message || 'Unknown error'}`);
+      }).catch(err => {
+        // If we can't parse the error as JSON, just throw the original error
+        if (err.name === 'SyntaxError') {
+          throw new Error(`Failed to save booking. Status: ${res.status}`);
+        }
+        throw err;
+      });
+    }
+    
+    return res.json();
+  })
+  .then(data => {
+    console.log('Booking saved successfully:', data);
+  })
+  .catch(err => {
+    console.error('Error saving booking:', err);
+  });
 }
+
 
 // Display booking summary on personal details and payment pages
 function displayBookingSummary() {
