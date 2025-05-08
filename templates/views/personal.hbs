@@ -1,0 +1,119 @@
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Booking - Personal Details</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="https://www.tajhotels.com/en-in/taj-favicon-32x32.svg" type="image/svg" sizes="32x32">
+</head>
+<body>
+    {{>navbar}}
+ <main class="booking-section">
+        <div class="stepper-container">
+            <h2>PLAN YOUR STAY</h2>
+            <div class="stepper">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <span>Select Room</span>
+                </div>
+                <div class="step active">
+                    <span class="step-number">2</span>
+                    <span>Personal Details</span>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <span>Payment Confirmation</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="personal-details-container">
+            <form id="personal-details-form" method="POST" action="/bookings/new"> 
+                <h3>Guest Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName" class="required">First Name</label>
+                        <input type="text" id="firstName" name="fname" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName" class="required">Last Name</label>
+                      <input type="text" id="lastName" name="lname" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email" class="required">Email Address</label>
+                       <input type="email" id="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone" class="required">Phone Number</label>
+                       <input type="tel" id="phone" name="phone_no" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="specialRequests">Special Requests (Optional)</label>
+                    <textarea id="specialRequests" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="payment-options">
+                    <h3>Payment Option</h3>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="payNow" name="paymentOption" value="payNow" checked>
+                            <label for="payNow">Pay Now - Secure your booking immediately</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="payAtHotel" name="paymentOption" value="payAtHotel">
+                            <label for="payAtHotel">Pay at Hotel - Settle payment during your stay</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booking-summary">
+                    <h3>Booking Summary</h3>
+                    <div class="booking-details">
+                        <div class="booking-detail">
+                            <strong>Hotel:</strong> Taj Cidade de Goa Heritage
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Room Type:</strong> Premium Room Sea View King Bed
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Check-in:</strong> 10 May 2025
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Check-out:</strong> 13 May 2025
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Guests:</strong> 2 Adults
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Room Rate:</strong> ₹ 20,000 per night
+                        </div>
+                    </div>
+                    <div class="total-price">
+                        <div>Room Charges (3 nights): ₹ 60,000</div>
+                        <div>Taxes & Fees: ₹ 10,800</div>
+                        <div>Total Amount: ₹ 70,800</div>
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button type="button" class="btn btn-back">Back to Room Selection</button>
+                    <button type="submit" class="btn btn-continue">Continue to Payment</button>
+                </div>
+            </form>
+        </div>
+
+
+  {{>footer}}
+  </main>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>

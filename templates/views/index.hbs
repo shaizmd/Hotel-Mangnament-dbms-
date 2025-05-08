@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Booking - Home</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="https://www.tajhotels.com/en-in/taj-favicon-32x32.svg" type="image/svg" sizes="32x32">
+  
+</head>
+<body>
+    {{>navbar}}
+     <main class="booking-section">
+        <div class="stepper-container">
+            <h2>PLAN YOUR STAY</h2>
+            <div class="stepper">
+                <div class="step active">
+                    <span class="step-number">1</span>
+                    <span>Select Room</span>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <span>Personal Details</span>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <span>Payment Confirmation</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="room-listing">
+            <div class="room-container">
+                <article class="room">
+                    <img src="https://cdn.sanity.io/images/ocl5w36p/prod4/9cbee367b473c1451313e15f968484b69fdd703b-1400x1120.jpg"
+                        alt="Superior Room Garden View with Twin Beds">
+                    <div class="room-info">
+                        <h3>SUPERIOR ROOM GARDEN VIEW TWIN BED</h3>
+                        <p class="limited">⚠ Last Few Rooms Available</p>
+
+                        <div class="offer">
+                            <h4>Family Getaways Offer</h4>
+                            <ul>
+                                <li>Inclusive of breakfast and One Major Meal</li>
+                                <li>Wi-Fi for up to 4 devices</li>
+                                <li>Applicable taxes extra</li>
+                            </ul>
+                            <p class="rate"><strong>Standard Rate:</strong> ₹ 20,500</p>
+                             <button class='select' type="button"
+                                data-room="Superior Room Garden View Twin Bed"
+                                data-price="20500">
+                                Select
+                            </button>
+                        </div>
+
+                        <div class="offer">
+                            <h4>Best Available Rate: Breakfast Inclusive</h4>
+                            <ul>
+                                <li>Buffet breakfast included</li>
+                                <li>Standard Wi-Fi</li>
+                                <li>Applicable taxes extra</li>
+                            </ul>
+                            <p class="rate"><strong>Standard Rate:</strong> ₹ 17,500</p>
+                           <button class='select' type="button"
+                            data-room="Superior Room Garden View Twin Bed"
+                            data-price="17500">
+                            Select
+                            </button>
+                        </div>
+                    </div>
+                </article>
+     
+
+                
+                <article class="room">
+                    <img src="https://cdn.sanity.io/images/ocl5w36p/prod4/0893e28a41d861a00019d97a8e82225d18613716-1400x1120.jpg?w=1600&auto=format&dpr=2"
+                        alt="Deluxe Room City View with King Bed">
+                    <div class="room-info">
+                        <h3>DELUXE ROOM CITY VIEW KING BED</h3>
+                        <p class="limited">⚠ Last Few Rooms Available</p>
+
+                        <div class="offer">
+                            <h4>Exclusive City Escape Offer</h4>
+                            <ul>
+                                <li>Inclusive of breakfast and one welcome drink</li>
+                                <li>Wi-Fi for up to 3 devices</li>
+                                <li>Late checkout (subject to availability)</li>
+                            </ul>
+                            <p class="rate"><strong>Standard Rate:</strong> ₹ 18,200</p>
+                             <button class='select' type="button"
+                                data-room="Deluxe Room City View King Bed"
+                                data-price="18200">Select </button>
+                        </div>
+
+                        <div class="offer">
+                            <h4>Standard Bed & Breakfast Rate</h4>
+                            <ul>
+                                <li>Buffet breakfast at designated venue</li>
+                                <li>Standard Wi-Fi included</li>
+                                <li>Applicable taxes extra</li>
+                            </ul>
+                            <p class="rate"><strong>Standard Rate:</strong> ₹ 16,500</p>
+                            <button class='select' type="button"
+                                data-room="Deluxe Room City View King Bed"
+                                data-price="16500">Select </button>
+                        </div>
+                    </div>
+                </article>
+                
+                <article class="room">
+                    <img src="https://cdn.sanity.io/images/ocl5w36p/prod4/20b5dfb4ae2c7d7d92f4783c34cdbe1022265264-1400x1120.jpg?w=1600&auto=format&dpr=2" 
+                        alt="Premium Room Sea View with King Bed">
+                    <div class="room-info">
+                        <h3>PREMIUM ROOM SEA VIEW KING BED</h3>
+                        <p class="limited">⚠ Limited Availability</p>
+
+                        <div class="offer">
+                            <h4>Family Getaways Offer</h4>
+                            <ul>
+                                <li>Sea-facing room with balcony</li>
+                                <li>Inclusive of breakfast and lunch</li>
+                                <li>Wi-Fi for up to 4 devices</li>
+                                <li>Applicable taxes extra</li>
+                            </ul>
+                            <p class="rate"><strong>Standard Rate:</strong> ₹ 24,000</p>
+                             <button class='select' type="button"
+                                data-room="Premium Room Sea View King Bed"
+                                data-price="24000">Select </button>
+                        </div>
+
+                        <div class="offer">
+                            <h4>Best Available Rate: Breakfast Inclusive</h4>
+                            <ul>
+                                <li>Buffet breakfast included</li>
+                                <li>Premium Wi-Fi access</li>
+                                <li>Applicable taxes extra</li>
+                            </ul>
+                            <p class="rate"><strong>Standard Rate:</strong> ₹ 20,000</p>
+                             <button class='select' type="button"
+                                data-room="Premium Room Sea View King Bed"
+                                data-price="20000">Select </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <aside class="your-stay">
+                <h4>
+                    <div class="stay">Your Stay</div>
+                </h4>
+                <p>Room 1: 2 Adults<br><span class="selection">Not selected</span></p>
+                <p><strong>Price:</strong> ₹ 0.00</p>
+                <p><strong>Taxes and Fees:</strong> ₹ 0.00</p>
+                <p class="total"><strong>Total Amount:</strong> ₹ 0.00</p>
+            </aside>
+        </section>
+
+        {{>footer}}
+    </main>
+
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        flatpickr("#date-range", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            // defaultDate: ["2025-05-10", "2025-05-11"]
+        });
+    </script>
+      <script src="/js/main.js"></script>
+</body>
+</html>

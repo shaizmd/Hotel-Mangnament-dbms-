@@ -1,0 +1,155 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Booking - Personal Details</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" href="https://www.tajhotels.com/en-in/taj-favicon-32x32.svg" type="image/svg" sizes="32x32">
+</head>
+<body>
+    {{>navbar}}
+    <main class="booking-section">
+        <div class="stepper-container">
+            <h2>PLAN YOUR STAY</h2>
+            <div class="stepper">
+                <div class="step completed">
+                    <span class="step-number">✓</span>
+                    <span>Select Room</span>
+                </div>
+                <div class="step completed">
+                    <span class="step-number">✓</span>
+                    <span>Personal Details</span>
+                </div>
+                <div class="step active">
+                    <span class="step-number">3</span>
+                    <span>Payment Confirmation</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="payment-form-container" class="payment-container">
+            <h3>Payment Details</h3>
+            
+            <div class="payment-method-tabs">
+                <div class="payment-tab active">Credit Card</div>
+                <div class="payment-tab">Debit Card</div>
+                <div class="payment-tab">Net Banking</div>
+                <div class="payment-tab">UPI</div>
+            </div>
+            
+            <button id="random-data-btn" class="btn-random">Fill with Random Data</button>
+            
+            <form id="payment-form" class="payment-form">
+                {{!-- <div class="card-icons">
+                    <div class="card-icon">VISA</div>
+                    <div class="card-icon">MC</div>
+                    <div class="card-icon">AMEX</div>
+                    <div class="card-icon">DISC</div>
+                </div> --}}
+                <div class="card-icons">
+ <img class="card-icon" src="/images/card.png" alt="Visa" />
+    <img class="card-icon" src="/images/logo.png" alt="MasterCard" />
+    <img class="card-icon" src="/images/symbol.png" alt="Amex" />
+    <img class="card-icon" src="/images/paypal (1).png" alt="Discover" />
+</div>
+
+                
+                <div class="form-group">
+                    <label for="cardNumber" class="required">Card Number</label>
+                    <input type="text" id="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="expiryDate" class="required">Expiry Date</label>
+                        <input type="text" id="expiryDate" class="form-control" placeholder="MM/YY" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cvv" class="required">CVV</label>
+                        <input type="password" id="cvv" class="form-control" placeholder="123" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cardholderName" class="required">Cardholder Name</label>
+                    <input type="text" id="cardholderName" class="form-control" placeholder="Name as on card" required>
+                </div>
+                
+                <div class="booking-summary">
+                    <h3>Booking Summary</h3>
+                    <div class="booking-details">
+                        <div class="booking-detail">
+                            <strong>Hotel:</strong> Taj Cidade de Goa Heritage
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Room Type:</strong> Premium Room Sea View King Bed
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Check-in:</strong> 10 May 2025
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Check-out:</strong> 13 May 2025
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Guests:</strong> 2 Adults
+                        </div>
+                        <div class="booking-detail">
+                            <strong>Room Rate:</strong> ₹ 20,000 per night
+                        </div>
+                    </div>
+                    <div class="total-price">
+                        <div>Room Charges (3 nights): ₹ 60,000</div>
+                        <div>Taxes & Fees: ₹ 10,800</div>
+                        <div>Total Amount: ₹ 70,800</div>
+                    </div>
+                </div>
+                
+                <div class="button-container">
+                    <button type="button" class="btn btn-back">Back to Personal Details</button>
+                    <button type="submit" class="btn btn-pay">Pay Now - ₹ 70,800</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="success-container" class="success-container">
+            <div class="success-icon"></div>
+            <div class="success-message">
+                <h2>Payment Successful!</h2>
+                <p>Your booking has been confirmed. We've sent a confirmation email to your registered email address.</p>
+                
+                
+                <div class="confirmation-details">
+                    <div class="detail-item">
+                        <span>Booking Reference</span>
+                        <span id="booking-reference">TAJ-25051023</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Payment Amount</span>
+                        <span id="payment-amount">₹ 70,800</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Payment Date</span>
+                        <span id="payment-date">05 May 2025</span>
+                    </div>
+                    <div class="detail-item">
+                        <span>Payment Method</span>
+                        <span id="payment-method">Credit Card (xxxx-1234)</span>
+                    </div>
+                </div>
+                
+                <button class="btn-view-booking">View Your Booking</button>
+            </div>
+        </div>
+     
+
+        {{>footer}}
+    </main>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/js/main.js">
+        
+    </script>
+</body>
+</html>
+{{!-- postgre sql password: root --}}
