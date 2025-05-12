@@ -250,6 +250,27 @@ app.use((err, req, res, next) => {
   });
 });
 
+
+
+
+
+const RoomInfo = require('./models/roominfo');
+
+app.use(express.json());
+
+app.post('/submit-roominfo', async (req, res) => {
+  const { room_type, check_in, check_out, no_of_guests, room_rate } = req.body;
+
+  try {
+    const result = await RoomInfo.saveRoomInfo(room_type, check_in, check_out, no_of_guests, room_rate);
+    res.status(200).json({ message: 'Room info saved successfully', id: result.id });
+  } catch (err) {
+    console.error('Error saving room info:', err);
+    res.status(500).json({ message: 'Error saving room info' });
+  }
+});
+
+
 // Server initialization
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
