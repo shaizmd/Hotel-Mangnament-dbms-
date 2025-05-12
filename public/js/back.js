@@ -69,6 +69,49 @@ function getAllBookingData() {
   };
 }
 
+// ===== DATE PICKER FUNCTIONALITY =====
+let picker; // Declare globally
+
+function initDatePicker() {
+  const dateRangePicker = document.getElementById('date-range');
+  if (!dateRangePicker) return;
+
+  // Initialize the flatpickr instance
+  picker = flatpickr("#date-range", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    minDate: "today",
+    onChange: function (selectedDates, dateStr, instance) {
+      if (selectedDates.length === 2) {
+        const diffInTime = selectedDates[1] - selectedDates[0];
+        const diffInDays = diffInTime / (1000 * 3600 * 24);
+
+        if (diffInDays > 10) {
+          alert("You can select a maximum stay of 10 days.");
+          instance.clear();
+          return;
+        }
+
+        console.log("Date selection changed:", dateStr);
+        saveSearchData();
+
+        if (isRoomSelectionPage()) {
+          const searchData = getBookingData('searchData');
+          updateYourStayDisplay(searchData);
+        }
+      }
+    }
+  });
+
+  // Pre-fill with saved dates if any
+  const searchData = getBookingData('searchData');
+  if (searchData?.dates?.checkIn && searchData?.dates?.checkOut) {
+    console.log("Setting saved dates:", searchData.dates);
+    picker.setDate([searchData.dates.checkIn, searchData.dates.checkOut]);
+  }
+}
+
+
 // ===== NAVBAR SEARCH FUNCTIONALITY =====
 function initNavbarSearch() {
   const searchBar = document.querySelector('.search-bar');
@@ -95,7 +138,7 @@ function initNavbarSearch() {
       
       // If on homepage, navigate to rooms page
       if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-        window.location.href = '/rooms';
+        window.location.href = '/';
       }
     });
   }
@@ -106,15 +149,20 @@ function saveSearchData() {
   const searchBar = document.querySelector('.search-bar');
   if (!searchBar) return;
   
+  const dateRangeValue = document.getElementById('date-range')?.value || '';
+  const dates = extractDatesFromRange(dateRangeValue);
+  const nights = calculateNights(dates.checkIn, dates.checkOut);
+  
+  console.log("Saving search data with dates:", dates, "nights:", nights);
+  
   const searchData = {
     hotel: searchBar.querySelector('select[aria-label="Hotel Selection"]')?.value || 'Taj Cidade de Goa Heritage',
-    dateRange: document.getElementById('date-range')?.value || '',
-    dates: extractDatesFromRange(document.getElementById('date-range')?.value),
+    dateRange: dateRangeValue,
+    dates: dates,
     guests: searchBar.querySelector('select[aria-label="Number of Guests"]')?.value || '2 Guests',
     rooms: searchBar.querySelector('select[aria-label="Number of Rooms"]')?.value || '1 Room',
     specialCode: searchBar.querySelector('input[placeholder="Special Code"]')?.value || '',
-    // Calculate nights from date range
-    nights: calculateNights(document.getElementById('date-range')?.value)
+    nights: nights
   };
   
   saveBookingData('searchData', searchData);
@@ -122,27 +170,36 @@ function saveSearchData() {
 
 // Helper function to extract check-in and check-out dates from range
 function extractDatesFromRange(dateRange) {
-  if (!dateRange) return { checkIn: '2025-05-10', checkOut: '2025-05-13' };
+  if (!dateRange) {
+    console.log("No date range provided");
+    return { checkIn: null, checkOut: null };
+  }
   
   const dates = dateRange.split(' to ');
   return {
-    checkIn: dates[0] || '2025-05-10',
-    checkOut: dates[1] || '2025-05-13'
+    checkIn: dates[0] || null,
+    checkOut: dates[1] || null
   };
 }
 
-// Calculate number of nights from date range
-function calculateNights(dateRange) {
-  if (!dateRange) return 3;
+// Calculate number of nights between two dates
+function calculateNights(checkInDate, checkOutDate) {
+  if (!checkInDate || !checkOutDate) {
+    console.log("Missing dates for night calculation");
+    return 0;
+  }
   
-  const dates = extractDatesFromRange(dateRange);
-  const checkIn = new Date(dates.checkIn);
-  const checkOut = new Date(dates.checkOut);
+  const checkIn = new Date(checkInDate);
+  const checkOut = new Date(checkOutDate);
   
-  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) return 3;
+  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+    console.log("Invalid date format for night calculation");
+    return 0;
+  }
   
   const diffTime = Math.abs(checkOut - checkIn);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  console.log("Calculated nights:", diffDays);
   return diffDays;
 }
 
@@ -168,16 +225,15 @@ function loadSavedSearchData() {
   const searchData = getBookingData('searchData');
   if (!searchData) return;
   
+  console.log("Loading saved search data:", searchData);
+  
   // Set values if elements exist
   if (searchData.hotel) {
     const hotelSelect = searchBar.querySelector('select[aria-label="Hotel Selection"]');
     if (hotelSelect) hotelSelect.value = searchData.hotel;
   }
   
-  if (searchData.dateRange) {
-    const dateRangeInput = document.getElementById('date-range');
-    if (dateRangeInput) dateRangeInput.value = searchData.dateRange;
-  }
+  // Date range is handled in initDatePicker
   
   if (searchData.guests) {
     const guestsSelect = searchBar.querySelector('select[aria-label="Number of Guests"]');
@@ -192,22 +248,6 @@ function loadSavedSearchData() {
   if (searchData.specialCode) {
     const specialCodeInput = searchBar.querySelector('input[placeholder="Special Code"]');
     if (specialCodeInput) specialCodeInput.value = searchData.specialCode;
-  }
-}
-
-// ===== DATE PICKER FUNCTIONALITY =====
-function initDatePicker() {
-  const dateRangePicker = document.getElementById('date-range');
-  if (dateRangePicker) {
-    flatpickr("#date-range", {
-      mode: "range",
-      dateFormat: "Y-m-d",
-      defaultDate: ["2025-05-10", "2025-05-13"],
-      onChange: function(selectedDates, dateStr) {
-        // Save the selected date range when it changes
-        saveSearchData();
-      }
-    });
   }
 }
 
@@ -229,7 +269,13 @@ function initRoomSelection() {
       
       // Get search data for calculating total
       const searchData = getBookingData('searchData');
-      const nights = searchData?.nights || 3;
+      const nights = searchData?.nights || 0;
+      
+      // If no nights are selected, alert user
+      if (nights === 0) {
+        alert("Please select check-in and check-out dates before selecting a room.");
+        return;
+      }
       
       // Calculate totals based on number of nights
       const price = pricePerNight * nights;
@@ -239,20 +285,22 @@ function initRoomSelection() {
       // Create room selection data with complete information
       const roomData = {
         roomName,
-        roomNumber, // Add this for backend integration
+        roomNumber,
         pricePerNight,
         price,
         tax,
         total,
         nights,
-        // Include formatted dates for display
-        checkIn: searchData?.dates?.checkIn || '2025-05-10',
-        checkOut: searchData?.dates?.checkOut || '2025-05-13',
+        // Include dates from search data
+        checkIn: searchData?.dates?.checkIn || null,
+        checkOut: searchData?.dates?.checkOut || null,
         displayCheckIn: formatDisplayDate(searchData?.dates?.checkIn),
         displayCheckOut: formatDisplayDate(searchData?.dates?.checkOut),
         guests: searchData?.guests || '2 Guests',
         rooms: searchData?.rooms || '1 Room'
       };
+      
+      console.log("Saving room selection data:", roomData);
       
       // Save to localStorage
       saveBookingData('roomSelection', roomData);
@@ -273,6 +321,8 @@ function populateRoomSelectionData() {
   // Load saved search data to display in "Your Stay"
   const allData = getAllBookingData();
   
+  console.log("Populating room selection with data:", allData);
+  
   // Update Your Stay sidebar with existing data
   if (allData.search) {
     updateYourStayDisplay(allData.search);
@@ -289,6 +339,8 @@ function updateYourStayDisplay(searchData) {
   const yourStayElement = document.querySelector('.your-stay');
   if (!yourStayElement) return;
   
+  console.log("Updating Your Stay display with:", searchData);
+  
   // Extract and format data for display
   const roomsText = searchData.rooms || '1 Room';
   const guestsText = searchData.guests || '2 Guests';
@@ -301,15 +353,28 @@ function updateYourStayDisplay(searchData) {
   const roomsStr = roomsCount === 1 ? 'Room 1' : `${roomsCount} Rooms`;
   const guestsStr = guestsCount === 1 ? '1 Adult' : `${guestsCount} Adults`;
   
-  // Find or create info paragraph
-  let guestsInfo = yourStayElement.querySelector('p:first-of-type');
-  if (!guestsInfo) {
-    guestsInfo = document.createElement('p');
-    yourStayElement.appendChild(guestsInfo);
+  // Build HTML content for Your Stay section
+  let stayContent = `
+    <h4><div class="stay">Your Stay</div></h4>
+    <p>${roomsStr}: ${guestsStr}<br><span class="selection">Not selected</span></p>
+  `;
+  
+  // Add date information if available
+  if (searchData.dates && searchData.dates.checkIn && searchData.dates.checkOut) {
+    const displayCheckIn = formatDisplayDate(searchData.dates.checkIn);
+    const displayCheckOut = formatDisplayDate(searchData.dates.checkOut);
+    const nights = searchData.nights || 0;
+    
+    stayContent += `
+      <p><strong>Dates:</strong> ${displayCheckIn} - ${displayCheckOut}</p>
+      <p><strong>Nights:</strong> ${nights}</p>
+    `;
+  } else {
+    stayContent += `<p><strong>Dates:</strong> Please select check-in and check-out dates</p>`;
   }
   
   // Update the content
-  guestsInfo.innerHTML = `${roomsStr}: ${guestsStr}<br><span class="selection">Not selected</span>`;
+  yourStayElement.innerHTML = stayContent;
 }
 
 // Function to update the UI with room selection
@@ -319,23 +384,37 @@ function updateRoomSelection(roomData) {
     return;
   }
   
-  // Get current guest information (if any)
-  const currentGuestInfo = asideElement.querySelector('p:first-of-type')?.innerHTML.split('<br>')[0] || 
-                         `${roomData.rooms || '1 Room'}: ${roomData.guests || '2 Adults'}`;
+  console.log("Updating room selection display with:", roomData);
   
   // Keep the original heading
-  const heading = asideElement.querySelector('h4')?.outerHTML || 
-                 '<h4><div class="stay">Your Stay</div></h4>';
+  const heading = '<h4><div class="stay">Your Stay</div></h4>';
   
   // Format dates for display
-  const checkInDate = roomData.displayCheckIn || formatDisplayDate(roomData.checkIn) || '10 May 2025';
-  const checkOutDate = roomData.displayCheckOut || formatDisplayDate(roomData.checkOut) || '13 May 2025';
+  let dateDisplay = '<p><strong>Dates:</strong> Please select dates</p>';
+  
+  if (roomData.checkIn && roomData.checkOut) {
+    const checkInDate = roomData.displayCheckIn || formatDisplayDate(roomData.checkIn);
+    const checkOutDate = roomData.displayCheckOut || formatDisplayDate(roomData.checkOut);
+    dateDisplay = `<p><strong>Dates:</strong> ${checkInDate} - ${checkOutDate}</p>`;
+  }
+  
+  // Format room information
+  const roomsText = roomData.rooms || '1 Room';
+  const guestsText = roomData.guests || '2 Guests';
+  
+  // Extract numbers from text
+  const roomsCount = parseInt(roomsText) || 1;
+  const guestsCount = parseInt(guestsText) || 2;
+  
+  // Generate correct text (singular or plural)
+  const roomsStr = roomsCount === 1 ? 'Room 1' : `${roomsCount} Rooms`;
+  const guestsStr = guestsCount === 1 ? '1 Adult' : `${guestsCount} Adults`;
   
   // Replace the entire content
   asideElement.innerHTML = `
     ${heading}
-    <p>${currentGuestInfo}<br><span class="selection">${roomData.roomName}</span></p>
-    <p><strong>Dates:</strong> ${checkInDate} - ${checkOutDate}</p>
+    <p>${roomsStr}: ${guestsStr}<br><span class="selection">${roomData.roomName}</span></p>
+    ${dateDisplay}
     <p><strong>Price:</strong> ₹ ${roomData.pricePerNight.toLocaleString()} per night (${roomData.nights} nights)</p>
     <p><strong>Room Total:</strong> ₹ ${roomData.price.toLocaleString()}</p>
     <p><strong>Taxes and Fees:</strong> ₹ ${roomData.tax.toLocaleString()}</p>
@@ -344,39 +423,187 @@ function updateRoomSelection(roomData) {
 }
 
 // ===== PERSONAL DETAILS FORM FUNCTIONALITY =====
+// function initPersonalDetailsForm() {
+//   const personalForm = document.getElementById('personal-details-form');
+//   if (!personalForm) {
+//     return; // Not on personal details page
+//   }
+  
+//   // Handle form submission
+//   personalForm.addEventListener('submit', async function(e) {
+//     e.preventDefault();
+  
+//     // Save form data
+//     const formData = {
+//       firstName: document.getElementById('firstName')?.value || '',
+//       lastName: document.getElementById('lastName')?.value || '',
+//       email: document.getElementById('email')?.value || '',
+//       phone: document.getElementById('phone')?.value || '',
+//       address: document.getElementById('address')?.value || '',
+//       city: document.getElementById('city')?.value || '',
+//       state: document.getElementById('state')?.value || '',
+//       postalCode: document.getElementById('postalCode')?.value || '',
+//       country: document.getElementById('country')?.value || ''
+//     };
+  
+//     // Save personal details to localStorage
+//     saveBookingData('personalDetails', formData);
+  
+//     // Send guest info to the backend to insert into DB
+//     try {
+//       const res = await fetch('/submit-guest', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify({
+//           fname: formData.firstName,
+//           lname: formData.lastName,
+//           email: formData.email,
+//           phone_no: formData.phone
+//         })
+//       });
+  
+//       const result = await res.json();
+  
+//       if (res.ok) {
+//         console.log('Guest data saved successfully:', result);
+//         // Redirect to payment page
+//         window.location.href = '/payment';
+//       } else {
+//         alert('Failed to save guest information. Please try again.');
+//       }
+//     } catch (err) {
+//       console.error('Error saving guest data:', err);
+//       // Fallback in case API call fails - still allow user to proceed
+//       console.log('Proceeding to payment page despite API error');
+//       window.location.href = '/payment';
+//     }
+//   });
+  
+//   // Handle "Back" button
+//   const backBtn = document.querySelector('.btn-back');
+//   if (backBtn) {
+//     backBtn.addEventListener('click', () => {
+//       window.location.href = '/';
+//     });
+//   }
+// }
 function initPersonalDetailsForm() {
   const personalForm = document.getElementById('personal-details-form');
   if (!personalForm) {
     return; // Not on personal details page
   }
+
+  // Function to display error message
+  function showError(fieldId, message) {
+    // Look for existing error element or create one
+    let errorElement = document.getElementById(`${fieldId}-error`);
+    
+    if (!errorElement) {
+      // Create error element if it doesn't exist
+      errorElement = document.createElement('div');
+      errorElement.id = `${fieldId}-error`;
+      errorElement.className = 'error-message';
+      errorElement.style.color = 'red';
+      errorElement.style.fontSize = '12px';
+      errorElement.style.marginTop = '5px';
+      
+      // Insert error element after the input field
+      const inputField = document.getElementById(fieldId);
+      if (inputField && inputField.parentNode) {
+        inputField.parentNode.insertBefore(errorElement, inputField.nextSibling);
+      }
+    }
+    
+    // Set error message
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    
+    // Highlight the input field
+    const inputField = document.getElementById(fieldId);
+    if (inputField) {
+      inputField.style.borderColor = 'red';
+    }
+  }
   
+  // Function to clear all error messages
+  function clearErrors() {
+    // Clear all error messages
+    const errorElements = document.querySelectorAll('.error-message');
+    errorElements.forEach(element => {
+      element.style.display = 'none';
+    });
+    
+    // Reset input field styling
+    const inputFields = personalForm.querySelectorAll('input');
+    inputFields.forEach(field => {
+      field.style.borderColor = '';
+    });
+  }
+
   // Handle form submission
   personalForm.addEventListener('submit', async function(e) {
     e.preventDefault();
-  
-    // Save form data
+    
+    // Clear previous error messages
+    clearErrors();
+    
+    // Get form data
     const formData = {
-      firstName: document.getElementById('firstName')?.value || '',
-      lastName: document.getElementById('lastName')?.value || '',
-      email: document.getElementById('email')?.value || '',
-      phone: document.getElementById('phone')?.value || '',
+      firstName: document.getElementById('firstName')?.value.trim() || '',
+      lastName: document.getElementById('lastName')?.value.trim() || '',
+      email: document.getElementById('email')?.value.trim() || '',
+      phone: document.getElementById('phone')?.value.trim() || '',
       address: document.getElementById('address')?.value || '',
       city: document.getElementById('city')?.value || '',
       state: document.getElementById('state')?.value || '',
       postalCode: document.getElementById('postalCode')?.value || '',
       country: document.getElementById('country')?.value || ''
     };
-  
+    
+    // Validate inputs
+    let isValid = true;
+    
+    // Name validation - letters only
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(formData.firstName)) {
+      showError('firstName', 'First name must contain only letters');
+      isValid = false;
+    }
+    
+    if (!nameRegex.test(formData.lastName)) {
+      showError('lastName', 'Last name must contain only letters');
+      isValid = false;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      showError('email', 'Please enter a valid email address');
+      isValid = false;
+    }
+    
+    // Phone validation - for Indian phone numbers (10 digits starting with 6-9)
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      showError('phone', 'Please enter a valid 10-digit Indian mobile number');
+      isValid = false;
+    }
+    
+    // If validation fails, stop form submission
+    if (!isValid) {
+      return;
+    }
+    
     // Save personal details to localStorage
     saveBookingData('personalDetails', formData);
-  
+    
     // Send guest info to the backend to insert into DB
     try {
       const res = await fetch('/submit-guest', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fname: formData.firstName,
           lname: formData.lastName,
@@ -384,9 +611,9 @@ function initPersonalDetailsForm() {
           phone_no: formData.phone
         })
       });
-  
+      
       const result = await res.json();
-  
+      
       if (res.ok) {
         console.log('Guest data saved successfully:', result);
         // Redirect to payment page
@@ -402,14 +629,77 @@ function initPersonalDetailsForm() {
     }
   });
   
+  // Add input event listeners for real-time validation feedback
+  const firstNameInput = document.getElementById('firstName');
+  const lastNameInput = document.getElementById('lastName');
+  const emailInput = document.getElementById('email');
+  const phoneInput = document.getElementById('phone');
+  
+  if (firstNameInput) {
+    firstNameInput.addEventListener('blur', function() {
+      const nameRegex = /^[A-Za-z\s]+$/;
+      if (this.value.trim() !== '' && !nameRegex.test(this.value.trim())) {
+        showError('firstName', 'First name must contain only letters');
+      } else {
+        // Clear error if valid
+        const errorElement = document.getElementById('firstName-error');
+        if (errorElement) errorElement.style.display = 'none';
+        this.style.borderColor = '';
+      }
+    });
+  }
+  
+  if (lastNameInput) {
+    lastNameInput.addEventListener('blur', function() {
+      const nameRegex = /^[A-Za-z\s]+$/;
+      if (this.value.trim() !== '' && !nameRegex.test(this.value.trim())) {
+        showError('lastName', 'Last name must contain only letters');
+      } else {
+        // Clear error if valid
+        const errorElement = document.getElementById('lastName-error');
+        if (errorElement) errorElement.style.display = 'none';
+        this.style.borderColor = '';
+      }
+    });
+  }
+  
+  if (emailInput) {
+    emailInput.addEventListener('blur', function() {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (this.value.trim() !== '' && !emailRegex.test(this.value.trim())) {
+        showError('email', 'Please enter a valid email address');
+      } else {
+        // Clear error if valid
+        const errorElement = document.getElementById('email-error');
+        if (errorElement) errorElement.style.display = 'none';
+        this.style.borderColor = '';
+      }
+    });
+  }
+  
+  if (phoneInput) {
+    phoneInput.addEventListener('blur', function() {
+      const phoneRegex = /^[6-9]\d{9}$/;
+      if (this.value.trim() !== '' && !phoneRegex.test(this.value.trim())) {
+        showError('phone', 'Please enter a valid 10-digit Indian mobile number');
+      } else {
+        // Clear error if valid
+        const errorElement = document.getElementById('phone-error');
+        if (errorElement) errorElement.style.display = 'none';
+        this.style.borderColor = '';
+      }
+    });
+  }
+
   // Handle "Back" button
   const backBtn = document.querySelector('.btn-back');
   if (backBtn) {
     backBtn.addEventListener('click', () => {
-      window.location.href = '/rooms';
+      window.location.href = '/';
     });
   }
 }
+
 
 // Populate personal details form from saved data
 function populatePersonalDetailsData() {
@@ -477,15 +767,15 @@ function initPaymentForm() {
     // Save confirmation data
     saveBookingData('bookingConfirmation', confirmationData);
     
-    // Update payment method display
-    updateConfirmationDisplay(confirmationData);
-    
     // Hide payment form and show success
     const formContainer = document.getElementById('payment-form-container');
     const successContainer = document.getElementById('success-container');
     
     if (formContainer) formContainer.style.display = 'none';
     if (successContainer) successContainer.style.display = 'block';
+    
+    // Update confirmation display and send data to backend ONLY after payment is processed
+    updateConfirmationDisplay(confirmationData);
     
     // Update stepper
     updateStepper();
@@ -517,12 +807,12 @@ function populatePaymentData() {
   // Pre-populate any payment fields that might be saved
   const allData = getAllBookingData();
   
-  // If we have confirmation data, update the success display
+  // If we have confirmation data, update the UI only (without sending to backend)
   if (allData.confirmation) {
-    updateConfirmationDisplay(allData.confirmation);
+    // Just update the UI with the existing confirmation data
+    updateConfirmationUI(allData.confirmation);
   }
 }
-
 // Update stepper to show completed state
 function updateStepper() {
   const activeStep = document.querySelector('.step.active');
@@ -535,74 +825,8 @@ function updateStepper() {
   }
 }
 
-// // Update confirmation display and send data to backend
-// function updateConfirmationDisplay(confirmationData) {
-//   const paymentMethodEl = document.getElementById('payment-method');
-//   const paymentDateEl = document.getElementById('payment-date');
-//   const bookingRefEl = document.getElementById('booking-reference');
-//   const paymentAmountEl = document.getElementById('payment-amount');
-
-//   if (paymentMethodEl) {
-//     paymentMethodEl.textContent = confirmationData.paymentMethod;
-//   }
-
-//   if (paymentDateEl) {
-//     paymentDateEl.textContent = confirmationData.paymentDate;
-//   }
-
-//   if (bookingRefEl) {
-//     bookingRefEl.textContent = confirmationData.confirmationNumber;
-//   }
-
-//   let finalAmount = 0;
-//   const roomData = getBookingData('roomSelection');
-//   if (paymentAmountEl) {
-//     if (roomData && roomData.total) {
-//       finalAmount = roomData.total;
-//       paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
-//     } else if (confirmationData.paymentAmount) {
-//       finalAmount = confirmationData.paymentAmount;
-//       paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
-//     }
-//   }
-
-//   // Send booking data to backend
-//   const guestData = getBookingData('personalDetails');
-//   if (guestData && roomData) {
-//     // Ensure roomNumber exists, generate if not available
-//     const roomNumber = roomData.roomNumber || `R${Math.floor(Math.random() * 900) + 100}`;
-    
-//     fetch('/api/bookings', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json'
-//       },
-//       body: JSON.stringify({
-//         bookingReference: confirmationData.confirmationNumber,
-//         guestEmail: guestData.email,
-//         roomNumber: roomNumber,
-//         paymentAmount: finalAmount,
-//         paymentDate: confirmationData.paymentDate,
-//         paymentMethod: confirmationData.paymentMethod
-//       })
-//     })
-//     .then(res => {
-//       if (!res.ok) throw new Error('Failed to save booking.');
-//       return res.json();
-//     })
-//     .then(data => {
-//       console.log('Booking saved:', data);
-//     })
-//     .catch(err => {
-//       console.error('Error saving booking:', err);
-//       // Don't alert to the user, as this is a non-critical operation
-//       // The booking is still valid even if backend storage fails
-//     });
-//   }
-// }
-
-
-function updateConfirmationDisplay(confirmationData) {
+// Update only the UI elements for confirmation display without sending data to backend
+function updateConfirmationUI(confirmationData) {
   const paymentMethodEl = document.getElementById('payment-method');
   const paymentDateEl = document.getElementById('payment-date');
   const bookingRefEl = document.getElementById('booking-reference');
@@ -620,19 +844,31 @@ function updateConfirmationDisplay(confirmationData) {
     bookingRefEl.textContent = confirmationData.confirmationNumber;
   }
   
-  let finalAmount = 0;
   const roomData = getBookingData('roomSelection');
   if (paymentAmountEl) {
     if (roomData && roomData.total) {
-      finalAmount = roomData.total;
-      paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
+      paymentAmountEl.textContent = `₹ ${roomData.total.toLocaleString()}`;
     } else if (confirmationData.paymentAmount) {
-      finalAmount = confirmationData.paymentAmount;
-      paymentAmountEl.textContent = `₹ ${finalAmount.toLocaleString()}`;
+      paymentAmountEl.textContent = `₹ ${confirmationData.paymentAmount.toLocaleString()}`;
     }
   }
+}
+
+// Update confirmation display AND send data to backend
+function updateConfirmationDisplay(confirmationData) {
+  // First update the UI
+  updateConfirmationUI(confirmationData);
   
-  // Send booking data to backend
+  // Get final amount from room data
+  let finalAmount = 0;
+  const roomData = getBookingData('roomSelection');
+  if (roomData && roomData.total) {
+    finalAmount = roomData.total;
+  } else if (confirmationData.paymentAmount) {
+    finalAmount = confirmationData.paymentAmount;
+  }
+  
+  // THEN send booking data to backend - only called from payment form submission
   fetch('/api/bookings', {
     method: 'POST',
     headers: {
@@ -670,6 +906,7 @@ function updateConfirmationDisplay(confirmationData) {
   })
   .catch(err => {
     console.error('Error saving booking:', err);
+    // Don't alert to the user, as this is a non-critical operation for the UI flow
   });
 }
 
@@ -965,359 +1202,3 @@ document.addEventListener('DOMContentLoaded', function() {
     console.error('payment-form element not found!');
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-// Main entry point - runs when DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize UI components
-  initDatePicker();
-  initNavbarSearch();
-  
-  // Loading data based on current page
-  if (isRoomSelectionPage()) {
-    initRoomSelection();
-    populateRoomSelectionData();
-  } else if (isPersonalDetailsPage()) {
-    initPersonalDetailsForm();
-    populatePersonalDetailsData();
-  } else if (isPaymentPage()) {
-    initPaymentForm();
-    populatePaymentData();
-  }
-  
-  // Initialize navbar search with saved data
-  loadSavedSearchData();
-});
-
-// ===== PAGE DETECTION HELPERS =====
-function isRoomSelectionPage() {
-  // Check for room selection page elements
-  return document.querySelectorAll('.select').length > 0 && 
-         document.querySelector('.your-stay') !== null;
-}
-
-function isPersonalDetailsPage() {
-  return document.getElementById('personal-details-form') !== null;
-}
-
-function isPaymentPage() {
-  return document.getElementById('payment-form') !== null;
-}
-
-// ===== DATA STORAGE FUNCTIONS =====
-function saveBookingData(key, data) {
-  try {
-    // Check if we need to merge with existing data
-    const existingData = getBookingData(key);
-    const updatedData = existingData ? { ...existingData, ...data } : data;
-    localStorage.setItem(key, JSON.stringify(updatedData));
-    return true;
-  } catch (error) {
-    console.error(`Error saving ${key} data:`, error);
-    return false;
-  }
-}
-
-function getBookingData(key) {
-  try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error(`Error retrieving ${key} data:`, error);
-    return null;
-  }
-}
-
-// Comprehensive booking data function - combines all booking data for consistent access
-function getAllBookingData() {
-  return {
-    search: getBookingData('searchData') || {},
-    room: getBookingData('roomSelection') || {},
-    personal: getBookingData('personalDetails') || {},
-    confirmation: getBookingData('bookingConfirmation') || {}
-  };
-}
-
-// ===== NAVBAR SEARCH FUNCTIONALITY =====
-function initNavbarSearch() {
-  const searchBar = document.querySelector('.search-bar');
-  if (!searchBar) return;
-  
-  // Get all interactive elements in the search bar
-  const hotelSelect = searchBar.querySelector('select[aria-label="Hotel Selection"]');
-  const guestsSelect = searchBar.querySelector('select[aria-label="Number of Guests"]');
-  const roomsSelect = searchBar.querySelector('select[aria-label="Number of Rooms"]');
-  const specialCodeInput = searchBar.querySelector('input[placeholder="Special Code"]');
-  const searchBtn = searchBar.querySelector('.search-btn');
-  
-  // Add event listeners to each element to save its value when changed
-  [hotelSelect, guestsSelect, roomsSelect, specialCodeInput].forEach(element => {
-    if (element) {
-      element.addEventListener('change', saveSearchData);
-    }
-  });
-  
-  // Add click handler for search button
-  if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
-      saveSearchData();
-      
-      // If on homepage, navigate to rooms page
-      if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-        window.location.href = '/';
-      }
-    });
-  }
-}
-
-// Function to save all search bar data to localStorage
-function saveSearchData() {
-  const searchBar = document.querySelector('.search-bar');
-  if (!searchBar) return;
-  
-  const searchData = {
-    hotel: searchBar.querySelector('select[aria-label="Hotel Selection"]')?.value || 'Taj Cidade de Goa Heritage',
-    dateRange: document.getElementById('date-range')?.value || '',
-    dates: extractDatesFromRange(document.getElementById('date-range')?.value),
-    guests: searchBar.querySelector('select[aria-label="Number of Guests"]')?.value || '2 Guests',
-    rooms: searchBar.querySelector('select[aria-label="Number of Rooms"]')?.value || '1 Room',
-    specialCode: searchBar.querySelector('input[placeholder="Special Code"]')?.value || '',
-    // Calculate nights from date range
-    nights: calculateNights(document.getElementById('date-range')?.value)
-  };
-  
-  saveBookingData('searchData', searchData);
-}
-
-// Helper function to extract check-in and check-out dates from range
-function extractDatesFromRange(dateRange) {
-  if (!dateRange) return { checkIn: '2025-05-10', checkOut: '2025-05-13' };
-  
-  const dates = dateRange.split(' to ');
-  return {
-    checkIn: dates[0] || '2025-05-10',
-    checkOut: dates[1] || '2025-05-13'
-  };
-}
-
-// Calculate number of nights from date range
-function calculateNights(dateRange) {
-  if (!dateRange) return 3;
-  
-  const dates = extractDatesFromRange(dateRange);
-  const checkIn = new Date(dates.checkIn);
-  const checkOut = new Date(dates.checkOut);
-  
-  if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) return 3;
-  
-  const diffTime = Math.abs(checkOut - checkIn);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
-
-// Format date to display format
-function formatDisplayDate(dateString) {
-  if (!dateString) return '';
-  
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
-  
-  const day = date.getDate();
-  const month = date.toLocaleString('default', { month: 'short' });
-  const year = date.getFullYear();
-  
-  return `${day} ${month} ${year}`;
-}
-
-// Function to load previously saved search data
-function loadSavedSearchData() {
-  const searchBar = document.querySelector('.search-bar');
-  if (!searchBar) return;
-  
-  const searchData = getBookingData('searchData');
-  if (!searchData) return;
-  
-  // Set values if elements exist
-  if (searchData.hotel) {
-    const hotelSelect = searchBar.querySelector('select[aria-label="Hotel Selection"]');
-    if (hotelSelect) hotelSelect.value = searchData.hotel;
-  }
-  
-  if (searchData.dateRange) {
-    const dateRangeInput = document.getElementById('date-range');
-    if (dateRangeInput) dateRangeInput.value = searchData.dateRange;
-  }
-  
-  if (searchData.guests) {
-    const guestsSelect = searchBar.querySelector('select[aria-label="Number of Guests"]');
-    if (guestsSelect) guestsSelect.value = searchData.guests;
-  }
-  
-  if (searchData.rooms) {
-    const roomsSelect = searchBar.querySelector('select[aria-label="Number of Rooms"]');
-    if (roomsSelect) roomsSelect.value = searchData.rooms;
-  }
-  
-  if (searchData.specialCode) {
-    const specialCodeInput = searchBar.querySelector('input[placeholder="Special Code"]');
-    if (specialCodeInput) specialCodeInput.value = searchData.specialCode;
-  }
-}
-
-// ===== DATE PICKER FUNCTIONALITY =====
-function initDatePicker() {
-  const dateRangePicker = document.getElementById('date-range');
-  if (dateRangePicker) {
-    flatpickr("#date-range", {
-      mode: "range",
-      dateFormat: "Y-m-d",
-      // defaultDate: ["2025-05-10", "2025-05-13"],
-      onChange: function(selectedDates, dateStr) {
-        // Save the selected date range when it changes
-        saveSearchData();
-      }
-    });
-  }
-}
-
-// ===== ROOM SELECTION FUNCTIONALITY =====
-function initRoomSelection() {
-  // Check if we're on the room selection page
-  const selectButtons = document.querySelectorAll('.select');
-  if (selectButtons.length === 0) {
-    return;
-  }
-  
-  // Add click handlers to all select buttons
-  selectButtons.forEach((button, index) => {
-    button.addEventListener('click', (event) => {
-      // Get room info from data attributes
-      const roomName = button.getAttribute('data-room') || 'Premium Room Sea View King Bed';
-      const pricePerNight = parseInt(button.getAttribute('data-price')) || 20000;
-      const roomNumber = button.getAttribute('data-room-number') || `R${100 + index}`; // Add room number
-      
-      // Get search data for calculating total
-      const searchData = getBookingData('searchData');
-      const nights = searchData?.nights || 3;
-      
-      // Calculate totals based on number of nights
-      const price = pricePerNight * nights;
-      const tax = Math.round(price * 0.18);
-      const total = price + tax;
-      
-      // Create room selection data with complete information
-      const roomData = {
-        roomName,
-        roomNumber, // Add this for backend integration
-        pricePerNight,
-        price,
-        tax,
-        total,
-        nights,
-        // Include formatted dates for display
-        checkIn: searchData?.dates?.checkIn || '2025-05-10',
-        checkOut: searchData?.dates?.checkOut || '2025-05-13',
-        displayCheckIn: formatDisplayDate(searchData?.dates?.checkIn),
-        displayCheckOut: formatDisplayDate(searchData?.dates?.checkOut),
-        guests: searchData?.guests || '2 Guests',
-        rooms: searchData?.rooms || '1 Room'
-      };
-      
-      // Save to localStorage
-      saveBookingData('roomSelection', roomData);
-      
-      // Update the UI before navigation
-      updateRoomSelection(roomData);
-      
-      // Navigate to personal details page (with a slight delay to see updates)
-      setTimeout(() => {
-        window.location.href = '/personal';
-      }, 1000);
-    });
-  });
-}
-
-// Populate room selection data on page load
-function populateRoomSelectionData() {
-  // Load saved search data to display in "Your Stay"
-  const allData = getAllBookingData();
-  
-  // Update Your Stay sidebar with existing data
-  if (allData.search) {
-    updateYourStayDisplay(allData.search);
-  }
-  
-  // If we already have a room selected, update that
-  if (allData.room && allData.room.roomName) {
-    updateRoomSelection(allData.room);
-  }
-}
-
-// Update the "Your Stay" sidebar with search information
-function updateYourStayDisplay(searchData) {
-  const yourStayElement = document.querySelector('.your-stay');
-  if (!yourStayElement) return;
-  
-  // Extract and format data for display
-  const roomsText = searchData.rooms || '1 Room';
-  const guestsText = searchData.guests || '2 Guests';
-  
-  // Extract numbers from text
-  const roomsCount = parseInt(roomsText) || 1;
-  const guestsCount = parseInt(guestsText) || 2;
-  
-  // Generate correct text (singular or plural)
-  const roomsStr = roomsCount === 1 ? 'Room 1' : `${roomsCount} Rooms`;
-  const guestsStr = guestsCount === 1 ? '1 Adult' : `${guestsCount} Adults`;
-  
-  // Find or create info paragraph
-  let guestsInfo = yourStayElement.querySelector('p:first-of-type');
-  if (!guestsInfo) {
-    guestsInfo = document.createElement('p');
-    yourStayElement.appendChild(guestsInfo);
-  }
-  
-  // Update the content
-  guestsInfo.innerHTML = `${roomsStr}: ${guestsStr}<br><span class="selection">Not selected</span>`;
-}
-
-// Function to update the UI with room selection
-function updateRoomSelection(roomData) {
-  const asideElement = document.querySelector('.your-stay');
-  if (!asideElement) {
-    return;
-  }
-  
-  // Get current guest information (if any)
-  const currentGuestInfo = asideElement.querySelector('p:first-of-type')?.innerHTML.split('<br>')[0] || 
-                         `${roomData.rooms || '1 Room'}: ${roomData.guests || '2 Adults'}`;
-  
-  // Keep the original heading
-  const heading = asideElement.querySelector('h4')?.outerHTML || 
-                 '<h4><div class="stay">Your Stay</div></h4>';
-  
-  // Format dates for display
-  const checkInDate = roomData.displayCheckIn || formatDisplayDate(roomData.checkIn) || '10 May 2025';
-  const checkOutDate = roomData.displayCheckOut || formatDisplayDate(roomData.checkOut) || '13 May 2025';
-  
-  // Replace the entire content
-  asideElement.innerHTML = `
-    ${heading}
-    <p>${currentGuestInfo}<br><span class="selection">${roomData.roomName}</span></p>
-    <p><strong>Dates:</strong> ${checkInDate} - ${checkOutDate}</p>
-    <p><strong>Price:</strong> ₹ ${roomData.pricePerNight.toLocaleString()} per night (${roomData.nights} nights)</p>
-    <p><strong>Room Total:</strong> ₹ ${roomData.price.toLocaleString()}</p>
-    <p><strong>Taxes and Fees:</strong> ₹ ${roomData.tax.toLocaleString()}</p>
-    <p class="total"><strong>Total Amount:</strong> ₹ ${roomData.total.toLocaleString()}</p>
-  `;
-}

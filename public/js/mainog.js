@@ -798,61 +798,7 @@ function updateConfirmationUI(confirmationData) {
   }
 }
 
-// Update confirmation display AND send data to backend
-// function updateConfirmationDisplay(confirmationData) {
-//   // First update the UI
-//   updateConfirmationUI(confirmationData);
-  
-//   // Get final amount from room data
-//   let finalAmount = 0;
-//   const roomData = getBookingData('roomSelection');
-//   if (roomData && roomData.total) {
-//     finalAmount = roomData.total;
-//   } else if (confirmationData.paymentAmount) {
-//     finalAmount = confirmationData.paymentAmount;
-//   }
-  
-//   // THEN send booking data to backend - only called from payment form submission
-//   fetch('/api/bookings', {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json'
-//     },
-//     body: JSON.stringify({
-//       bookingReference: confirmationData.confirmationNumber,
-//       paymentAmount: finalAmount,
-//       paymentDate: confirmationData.paymentDate,
-//       paymentMethod: confirmationData.paymentMethod
-//     })
-//   })
-//   .then(res => {
-//     console.log('Response status:', res.status);
-    
-//     // Get more information about error responses
-//     if (!res.ok) {
-//       // Extract the error message from the response
-//       return res.json().then(errorData => {
-//         console.error('Server error details:', errorData);
-//         throw new Error(`Failed to save booking. Server says: ${errorData.message || 'Unknown error'}`);
-//       }).catch(err => {
-//         // If we can't parse the error as JSON, just throw the original error
-//         if (err.name === 'SyntaxError') {
-//           throw new Error(`Failed to save booking. Status: ${res.status}`);
-//         }
-//         throw err;
-//       });
-//     }
-    
-//     return res.json();
-//   })
-//   .then(data => {
-//     console.log('Booking saved successfully:', data);
-//   })
-//   .catch(err => {
-//     console.error('Error saving booking:', err);
-//     // Don't alert to the user, as this is a non-critical operation for the UI flow
-//   });
-// }
+
 
 
 
@@ -1092,67 +1038,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Payment method tab functionality
-// document.addEventListener('DOMContentLoaded', function() {
-//   // Get payment tabs and payment method display
-//   const paymentTabs = document.querySelectorAll('.payment-tab');
-//   const paymentMethodDisplay = document.getElementById('payment-method');
-//   const paymentForm = document.getElementById('payment-form');
-  
-//   // Payment method display details
-  
-  
-//   // Payment method display details
-//   const paymentDetails = {
-//     'Credit Card': 'Credit Card (xxxx-3486)',
-//     'Debit Card': 'Debit Card (xxxx-5241)',
-//     'Net Banking': 'Net Banking (HDFC Bank)',
-//     'UPI': 'UPI (username@upi)'
-//   };
-  
-//   // Keep track of selected payment method
-//   let selectedPaymentMethod = 'Credit Card'; // Default
-  
-//   // Update payment method when a tab is clicked
-//   paymentTabs.forEach(tab => {
-//     tab.addEventListener('click', function() {
-//       // Update active tab styling
-//       paymentTabs.forEach(t => t.classList.remove('active'));
-//       this.classList.add('active');
-      
-//       // Store selected payment method
-//       selectedPaymentMethod = this.textContent;
-      
-//       // For testing: Update immediately to verify it's working
-//       // console.log('Selected payment method:', selectedPaymentMethod);
-//       // console.log('Payment display will show:', paymentDetails[selectedPaymentMethod]);
-//     });
-//   });
-  
-//   // Handle form submission - this is where we update the displayed payment method
-//   paymentForm.addEventListener('submit', function(e) {
-//     e.preventDefault(); // Prevent actual form submission
-    
-//     // Update payment method display with selected method
-//     if (paymentMethodDisplay) {
-//       paymentMethodDisplay.textContent = paymentDetails[selectedPaymentMethod];
-//       // console.log('Payment method updated to:', paymentMethodDisplay.textContent);
-//     } else {
-//       // console.error('Payment method display element not found!');
-//     }
-    
-//     // Show success container (assuming this logic exists elsewhere or is being added)
-//     const successContainer = document.getElementById('success-container');
-//     const paymentFormContainer = document.getElementById('payment-form-container');
-    
-//     if (successContainer && paymentFormContainer) {
-//       paymentFormContainer.style.display = 'none';
-//       successContainer.style.display = 'block';
-//     }
-//   });
-
-// });
-//  
 
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1234,34 +1119,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
-
-function sendRoomInfoToBackend() {
-  const roomInfo = {
-    room_type: "Superior Room Garden View Twin Bed",
-    check_in: "2025-05-18",
-    check_out: "2025-05-21",
-    no_of_guests: 4,
-    room_rate: 20500.00
-  };
-
-  fetch('/submit-roominfo', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(roomInfo)
-  })
-  .then(res => {
-    if (!res.ok) throw new Error("Failed to save room info.");
-    return res.json();
-  })
-  .then(data => {
-    console.log("Room info saved:", data);
-  })
-  .catch(err => {
-    console.error("Error:", err);
-  });
-}
-
-// Call this after summary is shown
-sendRoomInfoToBackend();

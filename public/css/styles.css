@@ -382,7 +382,7 @@
   }
   
   /* ===== Flatpickr Styles ===== */
-  .flatpickr-calendar {
+  /* .flatpickr-calendar {
     box-shadow: var(--box-shadow);
     border-radius: var(--border-radius);
   }
@@ -392,7 +392,101 @@
   .flatpickr-day.endRange {
     background-color: var(--accent-color);
     border-color: var(--accent-color);
-  }
+  } */
+   /* Calendar container */
+.flatpickr-calendar {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+  border: none;
+  padding: 10px;
+}
+
+/* Days grid */
+.flatpickr-day {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  margin: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Hover effect */
+.flatpickr-day:hover {
+  background-color: #f0f4f9;
+  cursor: pointer;
+}
+
+/* Selected day style */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+}
+
+/* Range highlight (between start and end) */
+.flatpickr-day.inRange {
+  background-color: rgba(0, 123, 255, 0.15);
+  color: #000;
+}
+
+/* Today’s date */
+.flatpickr-day.today {
+  border: 1px solid #007bff;
+  font-weight: bold;
+}
+
+/* Disabled dates */
+.flatpickr-day.disabled,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay {
+  color: #ccc;
+  background-color: transparent;
+}
+
+/* Month navigation arrows */
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month {
+  color: #007bff;
+  font-size: 18px;
+  transition: color 0.2s ease;
+}
+
+.flatpickr-months .flatpickr-prev-month:hover,
+.flatpickr-months .flatpickr-next-month:hover {
+  color: #0056b3;
+}
+
+/* Month title and year */
+.flatpickr-month {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Weekday headers */
+.flatpickr-weekday {
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.error-message {
+  color: #e63946;
+  font-size: 0.9em;
+  margin-top: 4px;
+  display: none;
+}
+
+
   .personal-details-container {
     max-width: 800px;
     margin: 0 auto;
